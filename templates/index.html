@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock Data Visualization</title>
+  <style>
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h1>주식 데이터 시각화</h1>
+  <label for="tickerInput">주식 코드 입력:</label>
+  <input type="text" id="tickerInput" placeholder="예: AAPL, GOOGL, MSFT">
+  <button onclick="fetchStockData()">데이터 가져오기</button>
+  <p id="description">입력한 주식 코드에 대한 최근 데이터를 보여줍니다. SMA_20과 SMA_50을 기반으로 매수 및 매도 신호를 제공합니다. 아래 표는 트레이드 결과를 요약합니다.</p>
+  <p id="investmentResult"></p>
+  <table id="stockTable">
+    <thead>
+      <tr>
+        <th>날짜</th>
+        <th>종가</th>
+        <th>SMA_20</th>
+        <th>SMA_50</th>
+        <th>신호</th>
+      </tr>
+    </thead>
+    <tbody id="stockTableBody">
+    </tbody>
+  </table>
+
+  <script>
+    async function fetchStockData() {
+      const ticker = document.getElementById('tickerInput').value;
+      if (!ticker) {
+        alert('주식 코드를 입력해주세요.');
+        return;
+      }
+      const response = await fetch(`/api/stock_data?ticker=${ticker}`);
+      const result = await response.json();
+      if (result.error) {
+        alert('오류: ' + result.error);
+        return;
+      }
+      document.getElementById('investmentResult').textContent = `투자 결과: ${result.investment_result}, 총 이익: ${result.total_profit.toFixed(2)}`;
+      const stockTableBody = document.getElementById('stockTableBody');
+      stockTableBody.innerHTML = '';
+      result.data.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${row.Date}</td>
+          <td>${row.Close.toFixed(2)}</td>
+          <td>${row.SMA_20 ? row.SMA_20.toFixed(2) : 'N/A'}</td>
+          <td>${row.SMA_50 ? row.SMA_50.toFixed(2) : 'N/A'}</td>
+          <td>${row.Signal === 1 ? '매수' : row.Signal === -1 ? '매도' : '보유'}</td>
+        `;
+        stockTableBody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
